@@ -30,6 +30,11 @@
 // using llvm::PassManagerBuilder
 // using llvm::RegisterStandardPasses
 
+#include "llvm/Support/CommandLine.h"
+// using llvm::cl::opt
+// using llvm::cl::desc
+// using llvm::cl::location
+
 #include "llvm/Support/raw_ostream.h"
 // using llvm::raw_ostream
 

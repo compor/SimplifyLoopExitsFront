@@ -1,3 +1,6 @@
+//
+//
+//
 
 #include <memory>
 // using std::unique_ptr
@@ -49,25 +52,42 @@
 #include "boost/variant.hpp"
 // using boost::variant
 
+#include "boost/variant/get.hpp"
+// using boost::get
+
+#include <string>
+// using std::string
+
+#include <algorithm>
+// using std::for_each
+
+#include <exception>
+// using std::exception
+
+#include <cassert>
+// using assert
+
 #include "SimplifyLoopExitsFront.hpp"
+
+#ifdef BOOST_NO_EXCEPTIONS
+namespace boost {
+void throw_exception(std::exception const &e) { assert(true); }
+}
+#endif // BOOST_NO_EXCEPTIONS
 
 namespace icsa {
 namespace {
 
-using test_result_t = boost::variant<bool, unsigned int>;
+using test_result_t =
+    boost::variant<bool, int, const char *, std::string>;
 using test_result_map = std::map<std::string, test_result_t>;
 
-struct test_result_visitor : public boost::static_visitor<unsigned int> {
-  unsigned int operator()(bool b) const { return b ? 1 : 0; }
-  unsigned int operator()(unsigned int i) const { return i; }
-};
-
-class TestDummy : public testing::Test {
+class TestSimplifyLoopExits : public testing::Test {
 public:
   enum struct AssemblyHolderType : int { FILE_TYPE, STRING_TYPE };
 
-
-  TestDummy() : m_Module{nullptr}, m_TestDataDir{"./unittests/data/"} {}
+  TestSimplifyLoopExits()
+      : m_Module{nullptr}, m_TestDataDir{"./unittests/data/"} {}
 
   void ParseAssembly(
       const char *AssemblyHolder,
@@ -75,12 +95,11 @@ public:
     llvm::SMDiagnostic err;
 
     if (AssemblyHolderType::FILE_TYPE == asmHolder) {
-    std::string fullFilename{m_TestDataDir};
+      std::string fullFilename{m_TestDataDir};
       fullFilename += AssemblyHolder;
 
-    m_Module =
-        llvm::parseAssemblyFile(fullFilename, err, llvm::getGlobalContext());
-
+      m_Module =
+          llvm::parseAssemblyFile(fullFilename, err, llvm::getGlobalContext());
     } else {
       m_Module = llvm::parseAssemblyString(AssemblyHolder, err,
                                            llvm::getGlobalContext());
@@ -119,7 +138,6 @@ public:
       }
 
       void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {
-        AU.setPreservesAll();
         AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
 
         return;
@@ -130,20 +148,27 @@ public:
           return false;
 
         auto &LI = getAnalysis<llvm::LoopInfoWrapperPass>().getLoopInfo();
-        // LI.print(llvm::outs());
 
-        auto &CurLoop = *LI.begin();
+        auto *CurLoop = *LI.begin();
         assert(CurLoop && "Loop ptr is invalid");
+
+        SimplifyLoopExits sle{*CurLoop};
+        const auto hdrExit = sle.getHeaderExit(*CurLoop);
+        const bool doesHdrExitOnTrue = sle.getExitConditionValue(*CurLoop);
+        const auto &loopExitEdges = sle.getEdges(*CurLoop);
+        loop_exit_target_t loopExitTargets{};
+
+        std::for_each(std::begin(loopExitEdges), std::end(loopExitEdges),
+                      [&loopExitTargets](const auto &e) {
+                        for (const auto &t : e.second) {
+                          loopExitTargets.insert(t);
+                        }
+                      });
 
         test_result_map::const_iterator found;
 
-        // subcase
-        found = lookup("number of exits");
-
-        const auto &rv = 0;
-        const auto &ev =
-            boost::apply_visitor(test_result_visitor(), found->second);
-        EXPECT_EQ(ev, rv) << found->first;
+        if (llvm::verifyModule(*F.getParent(), &(llvm::errs())))
+          llvm::report_fatal_error("module verification after pass failed\n");
 
         return false;
       }
@@ -151,7 +176,7 @@ public:
       test_result_map::const_iterator lookup(const std::string &subcase,
                                              bool fatalIfMissing = false) {
         auto found = m_trm.find(subcase);
-        if (fatalIfMissing && m_trm.end() == found) {
+        if (fatalIfMissing && std::end(m_trm) == found) {
           llvm::errs() << "subcase: " << subcase << " test data not found\n";
           std::abort();
         }
@@ -179,34 +204,12 @@ protected:
   const char *m_TestDataDir;
 };
 
-TEST_F(TestDummy, DISABLE_RegularLoopExits) {
-  ParseAssembly("define void @test() {\n"
-                "%i = alloca i32, align 4\n"
-                "%a = alloca i32, align 4\n"
-                "store i32 100, i32* %i, align 4\n"
-                "store i32 0, i32* %a, align 4\n"
-                "br label %1\n"
+//TEST_F(TestSimplifyLoopExits, RegularLoop) {
+  //ParseAssembly("test101.ll");
+  //test_result_map trm;
 
-                "%2 = load i32, i32* %i, align 4\n"
-                "%3 = add nsw i32 %2, -1\n"
-                "store i32 %3, i32* %i, align 4\n"
-                "%4 = icmp ne i32 %3, 0\n"
-                "br i1 %4, label %5, label %8\n"
-
-                "%6 = load i32, i32* %a, align 4\n"
-                "%7 = add nsw i32 %6, 1\n"
-                "store i32 %7, i32* %a, align 4\n"
-                "br label %1\n"
-
-                "ret void\n"
-                "}\n",
-    AssemblyHolderType::STRING_TYPE);
-
-  test_result_map trm;
-
-  trm.insert({"number of exits", 1});
-  ExpectTestPass(trm);
-}
+  //ExpectTestPass(trm);
+//}
 
 } // namespace anonymous end
 } // namespace icsa end
