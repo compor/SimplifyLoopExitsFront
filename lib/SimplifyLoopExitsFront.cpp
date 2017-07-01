@@ -8,6 +8,10 @@
 
 #include "SimplifyLoopExitsFront.hpp"
 
+#include "AnnotateLoops.hpp"
+
+#include "SimplifyLoopExits.hpp"
+
 #include "llvm/Pass.h"
 // using llvm::RegisterPass
 
@@ -23,12 +27,26 @@
 #include "llvm/IR/Function.h"
 // using llvm::Function
 
+#include "llvm/Analysis/LoopInfo.h"
+// using llvm::LoopInfoWrapperPass
+// using llvm::LoopInfo
+
+#include "llvm/IR/Dominators.h"
+// using llvm::DominatorTree
+// using llvm::DominatorTreeWrapperPass
+
 #include "llvm/IR/LegacyPassManager.h"
 // using llvm::PassManagerBase
 
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 // using llvm::PassManagerBuilder
 // using llvm::RegisterStandardPasses
+
+#include "llvm/Transforms/Scalar.h"
+// using char llvm::LoopInfoSimplifyID
+
+#include "llvm/ADT/SmallVector.h"
+// using llvm::SmallVector
 
 #include "llvm/Support/CommandLine.h"
 // using llvm::cl::opt
@@ -89,6 +107,39 @@ static llvm::cl::opt<bool, true>
 
 //
 
-bool SimplifyLoopExitsFront::runOnModule(llvm::Module &M) { return false; }
+bool SimplifyLoopExitsFront::runOnModule(llvm::Module &M) {
+  bool hasModuleChanged = false;
+  llvm::SmallVector<llvm::Loop *, 16> workList;
+  SimplifyLoopExits sle;
+
+  for (auto &CurFunc : M) {
+    if (CurFunc.isDeclaration())
+      continue;
+
+    auto &LI = getAnalysis<llvm::LoopInfoWrapperPass>(CurFunc).getLoopInfo();
+    auto &DT =
+        getAnalysis<llvm::DominatorTreeWrapperPass>(CurFunc).getDomTree();
+
+    workList.clear();
+    workList.append(&*(LI.begin()), &*(LI.end()));
+
+    for (auto i = 0; i < workList.size(); ++i)
+      for (auto &e : workList[i]->getSubLoops())
+        workList.push_back(e);
+  }
+
+  return false;
+}
+
+void SimplifyLoopExitsFront::getAnalysisUsage(llvm::AnalysisUsage &AU) const {
+  AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
+  AU.addPreserved<llvm::DominatorTreeWrapperPass>();
+  AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
+  AU.addPreserved<llvm::LoopInfoWrapperPass>();
+  AU.addRequiredTransitiveID(llvm::LoopSimplifyID);
+  AU.addPreservedID(llvm::LoopSimplifyID);
+
+  return;
+}
 
 } // namespace icsa end
