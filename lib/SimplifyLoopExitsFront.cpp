@@ -2,6 +2,12 @@
 //
 //
 
+#include "Config.hpp"
+
+#include "Utils.hpp"
+
+#include "SimplifyLoopExitsFront.hpp"
+
 #include "llvm/Pass.h"
 // using llvm::RegisterPass
 
@@ -11,11 +17,11 @@
 #include "llvm/IR/Instruction.h"
 // using llvm::Instruction
 
+#include "llvm/IR/Module.h"
+// using llvm::Module
+
 #include "llvm/IR/Function.h"
 // using llvm::Function
-
-#include "llvm/Support/Casting.h"
-// using llvm::dyn_cast
 
 #include "llvm/IR/LegacyPassManager.h"
 // using llvm::PassManagerBase
@@ -31,8 +37,6 @@
 // using DEBUG macro
 // using llvm::dbgs
 
-#include "SimplifyLoopExitsFront.hpp"
-
 #define DEBUG_TYPE "simplify_loop_exits_front"
 
 #define STRINGIFY_UTIL(x) #x
@@ -40,21 +44,7 @@
 
 #define PRJ_CMDLINE_DESC(x) x " (version: " STRINGIFY(VERSION_STRING) ")"
 
-#ifndef NDEBUG
-#define PLUGIN_OUT llvm::outs()
-//#define PLUGIN_OUT llvm::nulls()
-
-// convenience macro when building against a NDEBUG LLVM
-#undef DEBUG
-#define DEBUG(X)                                                               \
-  do {                                                                         \
-    X;                                                                         \
-  } while (0);
-#else // NDEBUG
-#define PLUGIN_OUT llvm::dbgs()
-#endif // NDEBUG
-
-#define PLUGIN_ERR llvm::errs()
+namespace icsa {
 
 // plugin registration for opt
 
@@ -85,10 +75,15 @@ static llvm::RegisterStandardPasses
 
 //
 
-namespace {
+#if SIMPLIFYLOOPEXITSFRONT_DEBUG
+bool passDebugFlag = false;
+static llvm::cl::opt<bool, true>
+    Debug("slef-debug", llvm::cl::desc("debug simplify loop exits front pass"),
+          llvm::cl::location(passDebugFlag));
+#endif // SIMPLIFYLOOPEXITSFRONT_DEBUG
 
-bool SimplifyLoopExitsFront::runOnFunction(llvm::Function &f) {
-  return false;
-}
+//
 
-} // namespace unnamed end
+bool SimplifyLoopExitsFront::runOnModule(llvm::Module &M) { return false; }
+
+} // namespace icsa end

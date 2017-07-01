@@ -6,23 +6,24 @@
 #define SIMPLIFYLOOPEXITSFRONT_HPP
 
 #include "llvm/Pass.h"
-// using llvm::FunctionPass
+// using llvm::ModulePass
 
 namespace llvm {
-class Function;
+class Module;
 } // namespace llvm end
 
-namespace {
+namespace icsa {
 
-class SimplifyLoopExitsFront : public llvm::FunctionPass {
+class SimplifyLoopExitsFront : public llvm::ModulePass {
 public:
   static char ID;
 
-  SimplifyLoopExitsFront() : llvm::FunctionPass(ID) {}
+  SimplifyLoopExitsFront() : llvm::ModulePass(ID) {}
 
-  bool runOnFunction(llvm::Function &f) override;
+  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
+  bool runOnModule(llvm::Module &M) override;
 };
 
-} // namespace unnamed end
+} // namespace icsa end
 
 #endif // SIMPLIFYLOOPEXITSFRONT_HPP
