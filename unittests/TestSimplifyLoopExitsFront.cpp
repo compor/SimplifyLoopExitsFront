@@ -152,19 +152,6 @@ public:
         auto *CurLoop = *LI.begin();
         assert(CurLoop && "Loop ptr is invalid");
 
-        SimplifyLoopExits sle{*CurLoop};
-        const auto hdrExit = sle.getHeaderExit(*CurLoop);
-        const bool doesHdrExitOnTrue = sle.getExitConditionValue(*CurLoop);
-        const auto &loopExitEdges = sle.getEdges(*CurLoop);
-        loop_exit_target_t loopExitTargets{};
-
-        std::for_each(std::begin(loopExitEdges), std::end(loopExitEdges),
-                      [&loopExitTargets](const auto &e) {
-                        for (const auto &t : e.second) {
-                          loopExitTargets.insert(t);
-                        }
-                      });
-
         test_result_map::const_iterator found;
 
         if (llvm::verifyModule(*F.getParent(), &(llvm::errs())))
