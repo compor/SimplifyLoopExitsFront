@@ -86,15 +86,15 @@ static llvm::RegisterPass<SimplifyLoopExitsFrontPass>
 
 static void
 registerSimplifyLoopExitsFrontPass(const llvm::PassManagerBuilder &Builder,
-                               llvm::legacy::PassManagerBase &PM) {
+                                   llvm::legacy::PassManagerBase &PM) {
   PM.add(new SimplifyLoopExitsFrontPass());
 
   return;
 }
 
-static llvm::RegisterStandardPasses
-    RegisterSimplifyLoopExitsFrontPass(llvm::PassManagerBuilder::EP_EarlyAsPossible,
-                                   registerSimplifyLoopExitsFrontPass);
+static llvm::RegisterStandardPasses RegisterSimplifyLoopExitsFrontPass(
+    llvm::PassManagerBuilder::EP_EarlyAsPossible,
+    registerSimplifyLoopExitsFrontPass);
 
 //
 
@@ -111,6 +111,7 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
   bool hasModuleChanged = false;
   llvm::SmallVector<llvm::Loop *, 16> workList;
   SimplifyLoopExits sle;
+  AnnotateLoops al;
 
   for (auto &CurFunc : M) {
     if (CurFunc.isDeclaration())
@@ -125,13 +126,15 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
 
     for (auto i = 0; i < workList.size(); ++i)
       for (auto &e : workList[i]->getSubLoops())
-        workList.push_back(e);
+        if (al.hasAnnotatedId(*e))
+          workList.push_back(e);
   }
 
   return false;
 }
 
-void SimplifyLoopExitsFrontPass::getAnalysisUsage(llvm::AnalysisUsage &AU) const {
+void SimplifyLoopExitsFrontPass::getAnalysisUsage(
+    llvm::AnalysisUsage &AU) const {
   AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
   AU.addPreserved<llvm::DominatorTreeWrapperPass>();
   AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
