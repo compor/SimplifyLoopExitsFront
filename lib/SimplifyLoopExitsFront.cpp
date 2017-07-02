@@ -71,8 +71,8 @@ namespace icsa {
 
 // plugin registration for opt
 
-char SimplifyLoopExitsFront::ID = 0;
-static llvm::RegisterPass<SimplifyLoopExitsFront>
+char SimplifyLoopExitsFrontPass::ID = 0;
+static llvm::RegisterPass<SimplifyLoopExitsFrontPass>
     X("simplify-loop-exits-front",
       PRJ_CMDLINE_DESC("simplify loop exits front pass"), false, false);
 
@@ -85,16 +85,16 @@ static llvm::RegisterPass<SimplifyLoopExitsFront>
 // RegisterStandardPasses class
 
 static void
-registerSimplifyLoopExitsFront(const llvm::PassManagerBuilder &Builder,
+registerSimplifyLoopExitsFrontPass(const llvm::PassManagerBuilder &Builder,
                                llvm::legacy::PassManagerBase &PM) {
-  PM.add(new SimplifyLoopExitsFront());
+  PM.add(new SimplifyLoopExitsFrontPass());
 
   return;
 }
 
 static llvm::RegisterStandardPasses
-    RegisterSimplifyLoopExitsFront(llvm::PassManagerBuilder::EP_EarlyAsPossible,
-                                   registerSimplifyLoopExitsFront);
+    RegisterSimplifyLoopExitsFrontPass(llvm::PassManagerBuilder::EP_EarlyAsPossible,
+                                   registerSimplifyLoopExitsFrontPass);
 
 //
 
@@ -107,7 +107,7 @@ static llvm::cl::opt<bool, true>
 
 //
 
-bool SimplifyLoopExitsFront::runOnModule(llvm::Module &M) {
+bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
   bool hasModuleChanged = false;
   llvm::SmallVector<llvm::Loop *, 16> workList;
   SimplifyLoopExits sle;
@@ -131,7 +131,7 @@ bool SimplifyLoopExitsFront::runOnModule(llvm::Module &M) {
   return false;
 }
 
-void SimplifyLoopExitsFront::getAnalysisUsage(llvm::AnalysisUsage &AU) const {
+void SimplifyLoopExitsFrontPass::getAnalysisUsage(llvm::AnalysisUsage &AU) const {
   AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
   AU.addPreserved<llvm::DominatorTreeWrapperPass>();
   AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();

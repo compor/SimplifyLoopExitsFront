@@ -14,11 +14,11 @@ class Module;
 
 namespace icsa {
 
-class SimplifyLoopExitsFront : public llvm::ModulePass {
+class SimplifyLoopExitsFrontPass : public llvm::ModulePass {
 public:
   static char ID;
 
-  SimplifyLoopExitsFront() : llvm::ModulePass(ID) {}
+  SimplifyLoopExitsFrontPass() : llvm::ModulePass(ID) {}
 
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override;
   bool runOnModule(llvm::Module &M) override;
