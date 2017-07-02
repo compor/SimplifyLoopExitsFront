@@ -105,6 +105,26 @@ static llvm::RegisterStandardPasses RegisterSimplifyLoopExitsFrontPass(
 
 //
 
+static llvm::cl::opt<unsigned int>
+    LoopDepthLB("slef-loop-depth-lb",
+                llvm::cl::desc("loop depth lower bound (inclusive)"),
+                llvm::cl::init(1u));
+
+static llvm::cl::opt<unsigned int>
+    LoopDepthUB("slef-loop-depth-ub",
+                llvm::cl::desc("loop depth upper bound (inclusive)"),
+                llvm::cl::init(std::numeric_limits<unsigned>::max()));
+
+static llvm::cl::opt<unsigned int> LoopExitingBlockDepthLB(
+    "slef-loop-exiting-block-depth-lb",
+    llvm::cl::desc("loop exiting block depth lower bound (inclusive)"),
+    llvm::cl::init(1u));
+
+static llvm::cl::opt<unsigned int> LoopExitingBlockDepthUB(
+    "slef-loop-exiting-block-depth-ub",
+    llvm::cl::desc("loop exiting block depth upper bound (inclusive)"),
+    llvm::cl::init(std::numeric_limits<unsigned>::max()));
+
 llvm::cl::list<unsigned int>
     LoopIDWhiteList("slef-loop-id",
                     llvm::cl::desc("Specify loop ids to whitelist"),
@@ -120,6 +140,23 @@ static llvm::cl::opt<bool, true>
     Debug("slef-debug", llvm::cl::desc("debug simplify loop exits front pass"),
           llvm::cl::location(passDebugFlag));
 #endif // SIMPLIFYLOOPEXITSFRONT_DEBUG
+
+namespace {
+
+void checkCmdLineOptions(void) {
+  assert(LoopDepthLB && LoopDepthUB && LoopExitingBlockDepthLB &&
+         LoopExitingBlockDepthUB && "Loop depth bounds cannot be zero!");
+
+  assert(LoopDepthLB <= LoopDepthUB &&
+         "Loop depth lower bound cannot be greater that upper!");
+
+  assert(LoopExitingBlockDepthLB <= LoopExitingBlockDepthUB &&
+         "Loop exiting block depth lower bound cannot be greater that upper!");
+
+  return;
+}
+
+} // namespace anonymous end
 
 //
 
@@ -142,7 +179,7 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
 
       loopIDWhiteListFile.close();
     } else
-      llvm::errs() << "could not open file: \'" << FuncWhiteListFilename
+      llvm::errs() << "could not open file: \'" << LoopIDWhiteListFilename
                    << "\'\n";
   }
 
@@ -167,7 +204,35 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
 
     for (auto i = 0; i < workList.size(); ++i)
       for (auto &e : workList[i]->getSubLoops())
-        ;
+        workList.push_back(e);
+
+    workList.erase(
+        std::remove_if(workList.begin(), workList.end(), [](const auto *e) {
+          auto d = e->getLoopDepth();
+          return d < LoopDepthLB || d > LoopDepthUB;
+        }), workList.end());
+
+    // remove any loops that their exiting blocks are outside of the
+    // specified loop next levels
+    workList.erase(
+        std::remove_if(workList.begin(), workList.end(), [&LI](const auto *e) {
+          llvm::SmallVector<llvm::BasicBlock *, 5> exiting;
+          e->getExitingBlocks(exiting);
+
+          return std::any_of(exiting.begin(), exiting.end(),
+                             [&LI](const auto *x) {
+                               auto d = LI[x]->getLoopDepth();
+                               return d < LoopExitingBlockDepthLB ||
+                                      d > LoopExitingBlockDepthUB;
+                             });
+        }), workList.end());
+
+    workList.erase(
+        std::remove_if(workList.begin(), workList.end(), [](const auto *e) {
+          return isLoopExitSimplifyForm(*e);
+        }), workList.end());
+
+    std::reverse(workList.begin(), workList.end());
   }
 
   return false;
