@@ -12,6 +12,8 @@
 
 #include "SimplifyLoopExits.hpp"
 
+#include "BWList.hpp"
+
 #include "llvm/Pass.h"
 // using llvm::RegisterPass
 
