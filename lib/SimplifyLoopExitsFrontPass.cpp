@@ -8,9 +8,13 @@
 
 #include "SimplifyLoopExitsFrontPass.hpp"
 
+#if SIMPLIFYLOOPEXITSFRONT_USES_ANNOTATELOOPS
 #include "AnnotateLoops.hpp"
+#endif // SIMPLIFYLOOPEXITSFRONT_USES_ANNOTATELOOPS
 
+#if SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
 #include "SimplifyLoopExits.hpp"
+#endif // SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
 
 #include "llvm/Pass.h"
 // using llvm::RegisterPass
