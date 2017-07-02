@@ -6,7 +6,7 @@
 
 #include "Utils.hpp"
 
-#include "SimplifyLoopExitsFrontPass.hpp"
+#include "SimplifyLoopExitsFront.hpp"
 
 #include "AnnotateLoops.hpp"
 

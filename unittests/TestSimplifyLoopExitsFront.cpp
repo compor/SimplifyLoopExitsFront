@@ -67,7 +67,7 @@
 #include <cassert>
 // using assert
 
-#include "SimplifyLoopExitsFront.hpp"
+#include "SimplifyLoopExitsFrontPass.hpp"
 
 #ifdef BOOST_NO_EXCEPTIONS
 namespace boost {
