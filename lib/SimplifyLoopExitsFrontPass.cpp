@@ -233,9 +233,19 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
         }), workList.end());
 
     std::reverse(workList.begin(), workList.end());
+
+    for (auto &e : workList) {
+      auto id = al.getAnnotatedId(*e);
+      llvm::errs() << "processing loop id: " << id << "\n";
+      bool changed = sle.transform(*e, LI, &DT);
+
+      hasModuleChanged |= changed;
+      if (changed)
+        llvm::errs() << "transformed loop id: " << id << "\n";
+    }
   }
 
-  return false;
+  return hasModuleChanged;
 }
 
 void SimplifyLoopExitsFrontPass::getAnalysisUsage(
