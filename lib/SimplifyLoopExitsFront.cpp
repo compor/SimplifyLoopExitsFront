@@ -12,8 +12,6 @@
 
 #include "SimplifyLoopExits.hpp"
 
-#include "BWList.hpp"
-
 #include "llvm/Pass.h"
 // using llvm::RegisterPass
 
@@ -99,6 +97,15 @@ static llvm::RegisterStandardPasses RegisterSimplifyLoopExitsFrontPass(
     registerSimplifyLoopExitsFrontPass);
 
 //
+
+llvm::cl::list<unsigned int>
+    LoopIDWhileList("slef-loop-id",
+                    llvm::cl::desc("Specify loop ids to whitelist"),
+                    llvm::cl::value_desc("loop id"), llvm::cl::OneOrMore);
+
+static llvm::cl::opt<std::string>
+    LoopIDWhiteListFilename("slef-loop-id-whitelist",
+                            llvm::cl::desc("loop id whitelist filename"));
 
 #if SIMPLIFYLOOPEXITSFRONT_DEBUG
 bool passDebugFlag = false;
