@@ -6,7 +6,7 @@
 
 #include "Utils.hpp"
 
-#include "SimplifyLoopExitsFront.hpp"
+#include "SimplifyLoopExitsFrontPass.hpp"
 
 #include "AnnotateLoops.hpp"
 
@@ -50,6 +50,7 @@
 
 #include "llvm/Support/CommandLine.h"
 // using llvm::cl::opt
+// using llvm::cl::list
 // using llvm::cl::desc
 // using llvm::cl::location
 
@@ -59,6 +60,12 @@
 #include "llvm/Support/Debug.h"
 // using DEBUG macro
 // using llvm::dbgs
+
+#include <fstream>
+// using std::ifstream
+
+#include <set>
+// using std::set
 
 #define DEBUG_TYPE "simplify_loop_exits_front"
 
@@ -86,17 +93,26 @@ static llvm::RegisterPass<SimplifyLoopExitsFrontPass>
 
 static void
 registerSimplifyLoopExitsFrontPass(const llvm::PassManagerBuilder &Builder,
-                               llvm::legacy::PassManagerBase &PM) {
+                                   llvm::legacy::PassManagerBase &PM) {
   PM.add(new SimplifyLoopExitsFrontPass());
 
   return;
 }
 
-static llvm::RegisterStandardPasses
-    RegisterSimplifyLoopExitsFrontPass(llvm::PassManagerBuilder::EP_EarlyAsPossible,
-                                   registerSimplifyLoopExitsFrontPass);
+static llvm::RegisterStandardPasses RegisterSimplifyLoopExitsFrontPass(
+    llvm::PassManagerBuilder::EP_EarlyAsPossible,
+    registerSimplifyLoopExitsFrontPass);
 
 //
+
+llvm::cl::list<unsigned int>
+    LoopIDWhiteList("slef-loop-id",
+                    llvm::cl::desc("Specify loop ids to whitelist"),
+                    llvm::cl::value_desc("loop id"), llvm::cl::OneOrMore);
+
+static llvm::cl::opt<std::string>
+    LoopIDWhiteListFilename("slef-loop-id-whitelist",
+                            llvm::cl::desc("loop id whitelist filename"));
 
 #if SIMPLIFYLOOPEXITSFRONT_DEBUG
 bool passDebugFlag = false;
@@ -109,8 +125,29 @@ static llvm::cl::opt<bool, true>
 
 bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
   bool hasModuleChanged = false;
+  bool useLoopIDWhitelist = !LoopIDWhiteListFilename.empty();
   llvm::SmallVector<llvm::Loop *, 16> workList;
+  std::set<unsigned> loopIDs;
   SimplifyLoopExits sle;
+  AnnotateLoops al;
+
+  if (useLoopIDWhitelist) {
+    std::ifstream loopIDWhiteListFile{LoopIDWhiteListFilename};
+
+    if (loopIDWhiteListFile.is_open()) {
+      unsigned loopID = 0;
+
+      while (loopIDWhiteListFile >> loopID)
+        loopIDs.insert(loopID);
+
+      loopIDWhiteListFile.close();
+    } else
+      llvm::errs() << "could not open file: \'" << FuncWhiteListFilename
+                   << "\'\n";
+  }
+
+  for (const auto &e : LoopIDWhiteList)
+    loopIDs.insert(e);
 
   for (auto &CurFunc : M) {
     if (CurFunc.isDeclaration())
@@ -121,17 +158,23 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
         getAnalysis<llvm::DominatorTreeWrapperPass>(CurFunc).getDomTree();
 
     workList.clear();
-    workList.append(&*(LI.begin()), &*(LI.end()));
+    for (auto *e : LI)
+      if (al.hasAnnotatedId(*e)) {
+        auto id = al.getAnnotatedId(*e);
+        if (!loopIDs.count(id))
+          workList.push_back(e);
+      }
 
     for (auto i = 0; i < workList.size(); ++i)
       for (auto &e : workList[i]->getSubLoops())
-        workList.push_back(e);
+        ;
   }
 
   return false;
 }
 
-void SimplifyLoopExitsFrontPass::getAnalysisUsage(llvm::AnalysisUsage &AU) const {
+void SimplifyLoopExitsFrontPass::getAnalysisUsage(
+    llvm::AnalysisUsage &AU) const {
   AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
   AU.addPreserved<llvm::DominatorTreeWrapperPass>();
   AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
