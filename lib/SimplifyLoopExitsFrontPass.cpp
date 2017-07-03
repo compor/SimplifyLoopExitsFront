@@ -67,6 +67,10 @@
 // using DEBUG macro
 // using llvm::dbgs
 
+#include <string>
+// using std::string
+// using std::stoul
+
 #include <fstream>
 // using std::ifstream
 
@@ -178,10 +182,12 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
     std::ifstream loopIDWhiteListFile{LoopIDWhiteListFilename};
 
     if (loopIDWhiteListFile.is_open()) {
-      unsigned loopID = 0;
+      std::string loopID;
 
-      while (loopIDWhiteListFile >> loopID)
-        loopIDs.insert(loopID);
+      while (loopIDWhiteListFile >> loopID) {
+        if (loopID.size() > 0 && loopID[0] != '#')
+          loopIDs.insert(std::stoul(loopID));
+      }
 
       loopIDWhiteListFile.close();
     } else
