@@ -204,7 +204,7 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
     for (auto *e : LI)
       if (al.hasAnnotatedId(*e)) {
         auto id = al.getAnnotatedId(*e);
-        if (!loopIDs.count(id))
+        if (loopIDs.count(id))
           workList.push_back(e);
       }
 
