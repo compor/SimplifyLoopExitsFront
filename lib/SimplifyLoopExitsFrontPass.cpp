@@ -56,7 +56,9 @@
 // using llvm::cl::opt
 // using llvm::cl::list
 // using llvm::cl::desc
+// using llvm::cl::value_desc
 // using llvm::cl::location
+// using llvm::cl::ZeroOrMore
 
 #include "llvm/Support/raw_ostream.h"
 // using llvm::raw_ostream
@@ -132,7 +134,7 @@ static llvm::cl::opt<unsigned int> LoopExitingBlockDepthUB(
 llvm::cl::list<unsigned int>
     LoopIDWhiteList("slef-loop-id",
                     llvm::cl::desc("Specify loop ids to whitelist"),
-                    llvm::cl::value_desc("loop id"), llvm::cl::OneOrMore);
+                    llvm::cl::value_desc("loop id"), llvm::cl::ZeroOrMore);
 
 static llvm::cl::opt<std::string>
     LoopIDWhiteListFilename("slef-loop-id-whitelist",
