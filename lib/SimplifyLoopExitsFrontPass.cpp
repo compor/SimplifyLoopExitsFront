@@ -67,6 +67,9 @@
 // using DEBUG macro
 // using llvm::dbgs
 
+#include "llvm/IR/Verifier.h"
+// using llvm::verifyFunction
+
 #include <string>
 // using std::string
 // using std::stoul
@@ -76,6 +79,9 @@
 
 #include <set>
 // using std::set
+
+#include <exception>
+// using std::terminate
 
 #define DEBUG_TYPE "simplify_loop_exits_front"
 
@@ -254,6 +260,12 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
       hasModuleChanged |= changed;
       if (changed)
         llvm::errs() << "transformed loop id: " << id << "\n";
+
+      bool isVerified = !llvm::verifyFunction(CurFunc, &llvm::errs());
+      if (!isVerified) {
+        llvm::errs() << "terminating!\n";
+        std::terminate();
+      }
     }
   }
 
