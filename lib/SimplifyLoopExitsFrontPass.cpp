@@ -181,8 +181,6 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
   bool useLoopIDWhitelist = !LoopIDWhiteListFilename.empty();
   llvm::SmallVector<llvm::Loop *, 16> workList;
   std::set<unsigned> loopIDs;
-  SimplifyLoopExits sle;
-  AnnotateLoops al;
 
   if (useLoopIDWhitelist) {
     std::ifstream loopIDWhiteListFile{LoopIDWhiteListFilename};
@@ -213,12 +211,17 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
         getAnalysis<llvm::DominatorTreeWrapperPass>(CurFunc).getDomTree();
 
     workList.clear();
+
+#if SIMPLIFYLOOPEXITSFRONT_USES_ANNOTATELOOPS
+    AnnotateLoops al;
+
     for (auto *e : LI)
       if (al.hasAnnotatedId(*e)) {
         auto id = al.getAnnotatedId(*e);
         if (loopIDs.count(id))
           workList.push_back(e);
       }
+#endif // SIMPLIFYLOOPEXITSFRONT_USES_ANNOTATELOOPS
 
     for (auto i = 0; i < workList.size(); ++i)
       for (auto &e : workList[i]->getSubLoops())
@@ -245,12 +248,15 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
                              });
         }), workList.end());
 
+    std::reverse(workList.begin(), workList.end());
+
+#if SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
     workList.erase(
         std::remove_if(workList.begin(), workList.end(), [](const auto *e) {
           return isLoopExitSimplifyForm(*e);
         }), workList.end());
 
-    std::reverse(workList.begin(), workList.end());
+    SimplifyLoopExits sle;
 
     for (auto &e : workList) {
       auto id = al.getAnnotatedId(*e);
@@ -267,6 +273,7 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
         std::terminate();
       }
     }
+#endif // SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
   }
 
   return hasModuleChanged;
@@ -274,12 +281,14 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
 
 void SimplifyLoopExitsFrontPass::getAnalysisUsage(
     llvm::AnalysisUsage &AU) const {
-  AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
-  AU.addPreserved<llvm::DominatorTreeWrapperPass>();
   AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
   AU.addPreserved<llvm::LoopInfoWrapperPass>();
+#if SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
+  AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
+  AU.addPreserved<llvm::DominatorTreeWrapperPass>();
   AU.addRequiredTransitiveID(llvm::LoopSimplifyID);
   AU.addPreservedID(llvm::LoopSimplifyID);
+#endif // SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
 
   return;
 }
