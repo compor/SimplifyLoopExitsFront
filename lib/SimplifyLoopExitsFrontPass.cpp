@@ -207,8 +207,10 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
       continue;
 
     auto &LI = getAnalysis<llvm::LoopInfoWrapperPass>(CurFunc).getLoopInfo();
+#if SIMPLIFYLOOPEXITSFRONT_USES_ANNOTATELOOPS
     auto &DT =
         getAnalysis<llvm::DominatorTreeWrapperPass>(CurFunc).getDomTree();
+#endif // SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
 
     workList.clear();
 
