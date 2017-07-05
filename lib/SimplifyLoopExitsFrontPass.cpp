@@ -141,7 +141,7 @@ static llvm::cl::opt<unsigned int> LoopExitingBlockDepthUB(
     llvm::cl::desc("loop exiting block depth upper bound (inclusive)"),
     llvm::cl::init(std::numeric_limits<unsigned>::max()));
 
-llvm::cl::list<unsigned int>
+static llvm::cl::list<unsigned int>
     LoopIDWhiteList("slef-loop-id",
                     llvm::cl::desc("Specify loop ids to whitelist"),
                     llvm::cl::value_desc("loop id"), llvm::cl::ZeroOrMore);
