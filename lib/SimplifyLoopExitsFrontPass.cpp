@@ -48,6 +48,7 @@
 
 #include "llvm/Transforms/Scalar.h"
 // using char llvm::LoopInfoSimplifyID
+// using char llvm::LowerSwitchID
 
 #include "llvm/ADT/SmallVector.h"
 // using llvm::SmallVector
@@ -206,11 +207,9 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
     if (CurFunc.isDeclaration())
       continue;
 
-    auto &LI = getAnalysis<llvm::LoopInfoWrapperPass>(CurFunc).getLoopInfo();
-#if SIMPLIFYLOOPEXITSFRONT_USES_ANNOTATELOOPS
     auto &DT =
         getAnalysis<llvm::DominatorTreeWrapperPass>(CurFunc).getDomTree();
-#endif // SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
+    auto &LI = getAnalysis<llvm::LoopInfoWrapperPass>(CurFunc).getLoopInfo();
 
     workList.clear();
 
@@ -283,14 +282,15 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
 
 void SimplifyLoopExitsFrontPass::getAnalysisUsage(
     llvm::AnalysisUsage &AU) const {
-  AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
-  AU.addPreserved<llvm::LoopInfoWrapperPass>();
 #if SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
+  AU.addPreservedID(llvm::LoopSimplifyID);
+  AU.addRequiredTransitiveID(llvm::LowerSwitchID);
+  AU.addRequiredTransitiveID(llvm::LoopSimplifyID);
+#endif // SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
   AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
   AU.addPreserved<llvm::DominatorTreeWrapperPass>();
-  AU.addRequiredTransitiveID(llvm::LoopSimplifyID);
-  AU.addPreservedID(llvm::LoopSimplifyID);
-#endif // SIMPLIFYLOOPEXITSFRONT_USES_SIMPLIFYLOOPEXITS
+  AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
+  AU.addPreserved<llvm::LoopInfoWrapperPass>();
 
   return;
 }
