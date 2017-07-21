@@ -84,6 +84,12 @@
 #include <exception>
 // using std::terminate
 
+#include <limits>
+// using std::numeric_limits
+
+#include <cassert>
+// using assert
+
 #define DEBUG_TYPE "simplify_loop_exits_front"
 
 #define STRINGIFY_UTIL(x) #x
@@ -178,6 +184,8 @@ void checkCmdLineOptions(void) {
 //
 
 bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
+  checkCmdLineOptions();
+
   bool hasModuleChanged = false;
   bool useLoopIDWhitelist = !LoopIDWhiteListFilename.empty();
   llvm::SmallVector<llvm::Loop *, 16> workList;
