@@ -71,15 +71,18 @@
 #include "llvm/IR/Verifier.h"
 // using llvm::verifyFunction
 
+#include <set>
+// using std::set
+
+#include <algorithm>
+// using std::for_each
+
 #include <string>
 // using std::string
 // using std::stoul
 
 #include <fstream>
 // using std::ifstream
-
-#include <set>
-// using std::set
 
 #include <exception>
 // using std::terminate
@@ -224,13 +227,18 @@ bool SimplifyLoopExitsFrontPass::runOnModule(llvm::Module &M) {
 #if SIMPLIFYLOOPEXITSFRONT_USES_ANNOTATELOOPS
     AnnotateLoops al;
 
-    for (auto *e : LI)
+    auto loopsFilter = [&](llvm::Loop *e) {
       if (al.hasAnnotatedId(*e)) {
         auto id = al.getAnnotatedId(*e);
         if (loopIDs.count(id))
           workList.push_back(e);
       }
+    };
+#else
+    auto loopsFilter = [&](llvm::Loop *e) { workList.push_back(e); };
 #endif // SIMPLIFYLOOPEXITSFRONT_USES_ANNOTATELOOPS
+
+    std::for_each(LI.begin(), LI.end(), loopsFilter);
 
     for (auto i = 0; i < workList.size(); ++i)
       for (auto &e : workList[i]->getSubLoops())
