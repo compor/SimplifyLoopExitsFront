@@ -201,6 +201,7 @@ set(PRJ_INSTALL_INCLUDE_DIR "include")
 set(PRJ_INSTALL_SHARE_DIR "share")
 set(PRJ_CONFIG_HEADER_FILE "Config.hpp")
 set(PRJ_CMAKE_CONFIG_FILE "config.cmake")
+set(PRJ_CMAKE_CONFIG_EXTRA_FILE "config-extra.cmake")
 
 set(DEPENDEE "")
 
@@ -225,6 +226,11 @@ string(TOLOWER ${PRJ_NAME} PRJ_NAME_LOWER)
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/share/cmake/${PRJ_CMAKE_CONFIG_FILE}.in"
   "${CMAKE_CURRENT_BINARY_DIR}/share/cmake/${PRJ_NAME_LOWER}-${PRJ_CMAKE_CONFIG_FILE}"
+  @ONLY)
+
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/share/cmake/${PRJ_CMAKE_CONFIG_EXTRA_FILE}.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/share/cmake/${PRJ_NAME}-${PRJ_CMAKE_CONFIG_EXTRA_FILE}"
   @ONLY)
 
 get_version(SHORT VERSION PRJ_VERSION_SHORT)
