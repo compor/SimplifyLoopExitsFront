@@ -56,7 +56,9 @@
 #include "llvm/Support/CommandLine.h"
 // using llvm::cl::opt
 // using llvm::cl::list
+// using llvm::cl::OptionCategory
 // using llvm::cl::desc
+// using llvm::cl::cat
 // using llvm::cl::value_desc
 // using llvm::cl::location
 // using llvm::cl::ZeroOrMore
@@ -131,40 +133,48 @@ static llvm::RegisterStandardPasses RegisterSimplifyLoopExitsFrontPass(
 
 //
 
+llvm::cl::OptionCategory SLEFPassOpts(
+    "Simplify loop exits front pass options",
+    "Options that control the behaviour of the simplify loop exits front pass");
+
 static llvm::cl::opt<unsigned int>
     LoopDepthLB("slef-loop-depth-lb",
                 llvm::cl::desc("loop depth lower bound (inclusive)"),
-                llvm::cl::init(1u));
+                llvm::cl::init(1u), llvm::cl::cat(SLEFPassOpts));
 
 static llvm::cl::opt<unsigned int>
     LoopDepthUB("slef-loop-depth-ub",
                 llvm::cl::desc("loop depth upper bound (inclusive)"),
-                llvm::cl::init(std::numeric_limits<unsigned>::max()));
+                llvm::cl::init(std::numeric_limits<unsigned>::max()),
+                llvm::cl::cat(SLEFPassOpts));
 
 static llvm::cl::opt<unsigned int> LoopExitingBlockDepthLB(
     "slef-loop-exiting-block-depth-lb",
     llvm::cl::desc("loop exiting block depth lower bound (inclusive)"),
-    llvm::cl::init(1u));
+    llvm::cl::init(1u), llvm::cl::cat(SLEFPassOpts));
 
 static llvm::cl::opt<unsigned int> LoopExitingBlockDepthUB(
     "slef-loop-exiting-block-depth-ub",
     llvm::cl::desc("loop exiting block depth upper bound (inclusive)"),
-    llvm::cl::init(std::numeric_limits<unsigned>::max()));
+    llvm::cl::init(std::numeric_limits<unsigned>::max()),
+    llvm::cl::cat(SLEFPassOpts));
 
 static llvm::cl::list<unsigned int>
     LoopIDWhiteList("slef-loop-id",
-                    llvm::cl::desc("Specify loop ids to whitelist"),
-                    llvm::cl::value_desc("loop id"), llvm::cl::ZeroOrMore);
+                    llvm::cl::desc("specify loop ids to whitelist"),
+                    llvm::cl::value_desc("loop id"), llvm::cl::ZeroOrMore,
+                    llvm::cl::cat(SLEFPassOpts));
 
 static llvm::cl::opt<std::string>
     LoopIDWhiteListFilename("slef-loop-id-whitelist",
-                            llvm::cl::desc("loop id whitelist filename"));
+                            llvm::cl::desc("loop id whitelist filename"),
+                            llvm::cl::cat(SLEFPassOpts));
 
 #if SIMPLIFYLOOPEXITSFRONT_DEBUG
 bool passDebugFlag = false;
 static llvm::cl::opt<bool, true>
     Debug("slef-debug", llvm::cl::desc("debug simplify loop exits front pass"),
-          llvm::cl::location(passDebugFlag));
+          llvm::cl::location(passDebugFlag), llvm::cl::cat(SLEFPassOpts));
 #endif // SIMPLIFYLOOPEXITSFRONT_DEBUG
 
 namespace {
