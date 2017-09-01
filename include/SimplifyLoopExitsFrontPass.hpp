@@ -2,8 +2,8 @@
 //
 //
 
-#ifndef SIMPLIFYLOOPEXITSFRONT_HPP
-#define SIMPLIFYLOOPEXITSFRONT_HPP
+#ifndef SIMPLIFYLOOPEXITSFRONTPASS_HPP
+#define SIMPLIFYLOOPEXITSFRONTPASS_HPP
 
 #include "llvm/Pass.h"
 // using llvm::ModulePass
@@ -26,4 +26,4 @@ public:
 
 } // namespace icsa end
 
-#endif // SIMPLIFYLOOPEXITSFRONT_HPP
+#endif // header
